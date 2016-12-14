@@ -3,6 +3,18 @@
 #include <vector>
 #include "drawingobject.h"
 wxDECLARE_EVENT(wxEVT_FINISH_DRAW_OBJECT, wxCommandEvent);
+enum Tracker
+{
+	None = -1,
+	NorthWest = 0,
+	North = 1,
+	NorthEast = 2,
+	West = 3,
+	East = 4,
+	SouthWest = 5,
+	South = 6,
+	SouthEast = 7
+};
 class DrawingCanvas :public wxWindow
 {
 public:
@@ -23,6 +35,7 @@ protected:
 	DrawingObject * m_selectedObject;
 	DrawingObjectType m_drawType;
 	wxPoint m_preMousePosition;
+	Tracker m_trackerSelect;
 private:
 	void Init();
 	DECLARE_DYNAMIC_CLASS(DrawingCanvas)
