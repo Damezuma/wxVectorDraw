@@ -22,6 +22,12 @@ protected:
 	void OnLButtonDown(wxMouseEvent & event);
 	void OnLButtonUp(wxMouseEvent & event);
 	void OnMouseMove(wxMouseEvent & event);
+	void OnRButtonDown(wxMouseEvent & event);
+	void OnClickDelete(wxCommandEvent & e);
+	void OnClickProperty(wxCommandEvent & e);
+	void OnClickMoveUpZindex(wxCommandEvent & e);
+	void OnClickMoveDownZindex(wxCommandEvent & e);
+
 	DrawingObject* HitTest(const wxPoint& pos);
 	std::vector<DrawingObject *> m_drawingObjects;
 	DrawingObject * m_selectedObject;

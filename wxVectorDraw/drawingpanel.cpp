@@ -5,7 +5,12 @@ wxBEGIN_EVENT_TABLE(DrawingCanvas, wxWindow)
 EVT_PAINT(DrawingCanvas::OnPaint)
 EVT_LEFT_UP(DrawingCanvas::OnLButtonUp)
 EVT_LEFT_DOWN(DrawingCanvas::OnLButtonDown)
+EVT_RIGHT_DOWN(DrawingCanvas::OnRButtonDown)
 EVT_MOTION(DrawingCanvas::OnMouseMove)
+EVT_MENU(6001,DrawingCanvas::OnClickProperty)
+EVT_MENU(6002, DrawingCanvas::OnClickDelete)
+EVT_MENU(6003, DrawingCanvas::OnClickMoveUpZindex)
+EVT_MENU(6004, DrawingCanvas::OnClickMoveDownZindex)
 wxEND_EVENT_TABLE();
 
 void DrawingCanvas::Init()
@@ -260,6 +265,93 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 				}
 				break;
 			}
+		}
+	}
+}
+
+void DrawingCanvas::OnRButtonDown(wxMouseEvent & event)
+{
+	if (m_drawType != DrawingObjectType::NONE)
+	{
+		return;
+	}
+	m_selectedObject = HitTest(event.GetPosition());
+	if (m_selectedObject != nullptr)
+	{
+		wxMenu  menu;
+		menu.Append(6001, wxT("속성"));
+		menu.Append(6002, wxT("삭제"));
+		menu.AppendSeparator();
+		menu.Append(6003, wxT("위로"));
+		menu.Append(6004, wxT("아래로"));
+		Refresh();
+		this->PopupMenu(&menu, event.GetPosition());
+	}
+	else
+	{
+		Refresh();
+	}
+	
+}
+
+void DrawingCanvas::OnClickDelete(wxCommandEvent & e)
+{
+	if (m_selectedObject == nullptr || m_drawType != DrawingObjectType::NONE)
+	{
+		return;
+	}
+	for (auto it = m_drawingObjects.begin(); it != m_drawingObjects.end(); it++)
+	{
+		if (*it == m_selectedObject)
+		{
+			m_drawingObjects.erase(it);
+			delete m_selectedObject;
+			m_selectedObject = nullptr;
+			Refresh();
+			return;
+		}
+	}
+	
+}
+void DrawingCanvas::OnClickProperty(wxCommandEvent & e)
+{
+
+}
+
+void DrawingCanvas::OnClickMoveUpZindex(wxCommandEvent & e)
+{
+	if (m_drawingObjects.back() == m_selectedObject)
+	{
+		return;
+	}
+	for (auto it = m_drawingObjects.begin(); it != m_drawingObjects.end(); it++)
+	{
+		if (*it == m_selectedObject)
+		{
+			*it = *(it + 1);
+			++it;
+			*it = m_selectedObject;
+			Refresh();
+			return;
+		}
+	}
+}
+
+void DrawingCanvas::OnClickMoveDownZindex(wxCommandEvent & e)
+{
+	if (m_drawingObjects.front() == m_selectedObject)
+	{
+		return;
+	}
+	for (auto it = m_drawingObjects.begin(); it != m_drawingObjects.end(); it++)
+	{
+		if (*it == m_selectedObject)
+		{
+			*it = *(it - 1);
+			--it;
+			*it = m_selectedObject;
+			Refresh();
+			return;
 		}
 	}
 }
