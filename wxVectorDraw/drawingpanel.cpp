@@ -129,36 +129,54 @@ void DrawingCanvas::OnLButtonDown(wxMouseEvent & event)
 				Line(wxColor(0, 0, 0), 3));
 		break;
 	case DrawingObjectType::NONE:
-		//객체를 선택하는 과정
-		DrawingObject * obj = nullptr;
-		int size = m_drawingObjects.size() - 1;
-		for (int i = 0 ; i < m_drawingObjects.size() ; i++)
+		if (m_selectedObject != nullptr)
 		{
-			obj = m_drawingObjects[size - i];
-			wxPoint objPos1 = obj->GetPosition();
-			wxSize objSize = obj->GetSize();
+			wxPoint objPos1 = m_selectedObject->GetPosition();
+			wxSize objSize = m_selectedObject->GetSize();
 			wxPoint objPos2 = objPos1 + objSize;
+
 			if (objSize.x < 0 || objSize.y < 0)
 			{
 				objPos1 = objPos2;
-				objPos2 = obj->GetPosition();
+				objPos2 = m_selectedObject->GetPosition();
 			}
-			if (objPos1.x > mousePosition.x || objPos1.y > mousePosition.y)
+			m_trackerSelect = CheckTrackerSelect(m_selectedObject, event.GetPosition());
+			if (m_trackerSelect == Tracker::None)
 			{
-				continue;
+				if (objPos1.x > mousePosition.x || objPos1.y > mousePosition.y ||
+					objPos2.x < mousePosition.x || objPos2.y < mousePosition.y)
+				{
+					m_selectedObject = nullptr;
+				}
 			}
-			if (objPos2.x < mousePosition.x || objPos2.y < mousePosition.y)
-			{
-				continue;
-			}
-			m_selectedObject = obj;
-			break;
-		}
-		if (m_selectedObject != nullptr)
-		{
 			m_preMousePosition = mousePosition;
+			Refresh();
 		}
-		m_trackerSelect = CheckTrackerSelect(m_selectedObject, event.GetPosition());
+		//객체를 선택하는 과정
+		if (m_selectedObject == nullptr)
+		{
+			DrawingObject * obj = nullptr;
+			int size = m_drawingObjects.size() - 1;
+			for (int i = 0; i < m_drawingObjects.size(); i++)
+			{
+				obj = m_drawingObjects[size - i];
+				wxPoint objPos1 = obj->GetPosition();
+				wxSize objSize = obj->GetSize();
+				wxPoint objPos2 = objPos1 + objSize;
+				if (objSize.x < 0 || objSize.y < 0)
+				{
+					objPos1 = objPos2;
+					objPos2 = obj->GetPosition();
+				}
+				if (objPos1.x > mousePosition.x || objPos1.y > mousePosition.y ||
+					objPos2.x < mousePosition.x || objPos2.y < mousePosition.y)
+				{
+					continue;
+				}
+				m_selectedObject = obj;
+				break;
+			}
+		}
 		//NONE, 선택상태에서는 push_back를 해서는 안된다. 고로 하기 전에 return한다.
 		return;
 	}
@@ -267,4 +285,5 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 		}
 	}
 }
+
 
