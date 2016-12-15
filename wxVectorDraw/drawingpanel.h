@@ -2,19 +2,10 @@
 #include <wx/wx.h>
 #include <vector>
 #include "drawingobject.h"
+#include "tracker.h"
+
 wxDECLARE_EVENT(wxEVT_FINISH_DRAW_OBJECT, wxCommandEvent);
-enum Tracker
-{
-	None = -1,
-	NorthWest = 0,
-	North = 1,
-	NorthEast = 2,
-	West = 3,
-	East = 4,
-	SouthWest = 5,
-	South = 6,
-	SouthEast = 7
-};
+
 class DrawingCanvas :public wxWindow
 {
 public:
@@ -31,11 +22,12 @@ protected:
 	void OnLButtonDown(wxMouseEvent & event);
 	void OnLButtonUp(wxMouseEvent & event);
 	void OnMouseMove(wxMouseEvent & event);
+	DrawingObject* HitTest(const wxPoint& pos);
 	std::vector<DrawingObject *> m_drawingObjects;
 	DrawingObject * m_selectedObject;
 	DrawingObjectType m_drawType;
 	wxPoint m_preMousePosition;
-	Tracker m_trackerSelect;
+	Tracker::Direction m_trackerDirection;
 private:
 	void Init();
 	DECLARE_DYNAMIC_CLASS(DrawingCanvas)

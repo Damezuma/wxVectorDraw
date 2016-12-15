@@ -144,26 +144,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="ribbon1.mfcribbon-ms" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="drawingobject.cpp" />
     <ClCompile Include="drawingpanel.cpp" />
     <ClCompile Include="mainapp.cpp" />
     <ClCompile Include="mainframe.cpp" />
+    <ClCompile Include="tracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drawingobject.h" />
     <ClInclude Include="drawingpanel.h" />
     <ClInclude Include="mainframe.h" />
-    <ClInclude Include="resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="wxVectorDraw.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="bitmap1.bmp" />
-    <Image Include="bitmap2.bmp" />
+    <ClInclude Include="tracker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

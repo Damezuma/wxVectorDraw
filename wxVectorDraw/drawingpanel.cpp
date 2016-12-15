@@ -7,39 +7,12 @@ EVT_LEFT_UP(DrawingCanvas::OnLButtonUp)
 EVT_LEFT_DOWN(DrawingCanvas::OnLButtonDown)
 EVT_MOTION(DrawingCanvas::OnMouseMove)
 wxEND_EVENT_TABLE();
-float relativePoints[][2] = { { 0.f,0.f },{ 0.5f,0.f },{ 1.f,0.f },{ 0.f,0.5f },{ 1.f,0.5f },{ 0.f,1.f },{ 0.5f,1.f },{ 1.f,1.f } };
-wxSize trackerSize(8, 8);
-wxBrush trackerBrush(wxColor(0xFF, 0xFF, 0xFF));
-wxPen trackerLine(wxColor(0, 0, 0), 1);
-
-Tracker CheckTrackerSelect(DrawingObject * obj,const  wxPoint & position)
-{
-	wxPoint pos = obj->GetPosition();
-	wxSize size = obj->GetSize();
-	wxPoint mousePosition = position;
-	for (int i = 0; i < 8; i++)
-	{
-		auto & point = relativePoints[i];
-		wxPoint pt1(point[0] * size.x + pos.x - trackerSize.x / 2, point[1] * size.y + pos.y - trackerSize.y / 2);
-		wxPoint pt2(point[0] * size.x + pos.x + trackerSize.x / 2, point[1] * size.y + pos.y + trackerSize.y / 2);
-		if (pt1.x > mousePosition.x || pt1.y > mousePosition.y)
-		{
-			continue;
-		}
-		if (pt2.x < mousePosition.x || pt2.y < mousePosition.y)
-		{
-			continue;
-		}
-		return (Tracker)i;
-	}
-	return Tracker::None;
-}
 
 void DrawingCanvas::Init()
 {
 	SetBackgroundColour(wxColor(255, 255, 255));
 	m_selectedObject = nullptr;
-	m_trackerSelect = Tracker::None;
+	m_trackerDirection = Tracker::Direction::None;
 }
 
 DrawingCanvas::DrawingCanvas()
@@ -92,23 +65,48 @@ void DrawingCanvas::OnPaint(wxPaintEvent & event)
 	}
 	if (m_selectedObject != nullptr && m_drawType == DrawingObjectType::NONE)
 	{
-		
-		wxPoint pos = m_selectedObject->GetPosition();
-		wxSize size = m_selectedObject->GetSize();
-
-		dc.SetPen(trackerLine);
-		dc.SetBrush(trackerBrush);
-		for (auto& point : relativePoints)
+		for (auto & tracker : m_selectedObject->GetTrackers())
 		{
-			wxPoint pt(point[0] * size.x + pos.x - trackerSize.x/2, point[1] * size.y + pos.y - trackerSize.y / 2);
-			dc.DrawRectangle(pt, trackerSize);
+			tracker.DoDraw(dc);
 		}
 	}
+}
+DrawingObject * DrawingCanvas::HitTest(const wxPoint & pos)
+{
+	DrawingObject * obj = nullptr;
+	int size = m_drawingObjects.size() - 1;
+	for (int i = 0; i < m_drawingObjects.size(); i++)
+	{
+		obj = m_drawingObjects[size - i];
+		wxPoint objPos1 = obj->GetPosition();
+		wxSize objSize = obj->GetSize();
+		wxPoint objPos2 = objPos1 + objSize;
+		if (objPos1.x > objPos2.x)
+		{
+			int t = objPos1.x;
+			objPos1.x = objPos2.x;
+			objPos2.x = t;
+		}
+		if (objPos1.y > objPos2.y)
+		{
+			int t = objPos1.y;
+			objPos1.y = objPos2.y;
+			objPos2.y = t;
+		}
+		if ((pos.x < objPos1.x || pos.y < objPos1.y) ||
+			(pos.x > objPos2.x || pos.y > objPos2.y))
+		{
+			continue;
+		}
+		return obj;
+	}
+	return nullptr;
 }
 
 void DrawingCanvas::OnLButtonDown(wxMouseEvent & event)
 {
 	wxPoint mousePosition = event.GetPosition();
+	m_preMousePosition = mousePosition;
 	switch (m_drawType)
 	{
 	case DrawingObjectType::RECTANGLE:
@@ -134,53 +132,47 @@ void DrawingCanvas::OnLButtonDown(wxMouseEvent & event)
 			wxPoint objPos1 = m_selectedObject->GetPosition();
 			wxSize objSize = m_selectedObject->GetSize();
 			wxPoint objPos2 = objPos1 + objSize;
-
-			if (objSize.x < 0 || objSize.y < 0)
+			
+			if (objPos1.x > objPos2.x)
 			{
-				objPos1 = objPos2;
-				objPos2 = m_selectedObject->GetPosition();
+				int t = objPos1.x;
+				objPos1.x = objPos2.x;
+				objPos2.x = t;
 			}
-			m_trackerSelect = CheckTrackerSelect(m_selectedObject, event.GetPosition());
-			if (m_trackerSelect == Tracker::None)
+			if (objPos1.y > objPos2.y)
 			{
-				if (objPos1.x > mousePosition.x || objPos1.y > mousePosition.y ||
-					objPos2.x < mousePosition.x || objPos2.y < mousePosition.y)
+				int t = objPos1.y;
+				objPos1.y = objPos2.y;
+				objPos2.y = t;
+			}
+			m_trackerDirection = Tracker::Direction::None;
+			for (auto & tracker : m_selectedObject->GetTrackers())
+			{
+				if (tracker.IsHit(event.GetPosition()))
 				{
-					m_selectedObject = nullptr;
+					m_trackerDirection = tracker.GetDirection();
+					break;
 				}
 			}
-			m_preMousePosition = mousePosition;
+			if (m_trackerDirection == Tracker::Direction::None)
+			{
+				//만약에 트래커를 누른 상태가 아닌데, 선택한 도형의 위에 다른 도형이 있어 가렸을 경우, 다른 도형을 선택한다.
+				m_selectedObject = HitTest(mousePosition);
+			}
+			
 			Refresh();
 		}
 		//객체를 선택하는 과정
 		if (m_selectedObject == nullptr)
 		{
-			DrawingObject * obj = nullptr;
-			int size = m_drawingObjects.size() - 1;
-			for (int i = 0; i < m_drawingObjects.size(); i++)
-			{
-				obj = m_drawingObjects[size - i];
-				wxPoint objPos1 = obj->GetPosition();
-				wxSize objSize = obj->GetSize();
-				wxPoint objPos2 = objPos1 + objSize;
-				if (objSize.x < 0 || objSize.y < 0)
-				{
-					objPos1 = objPos2;
-					objPos2 = obj->GetPosition();
-				}
-				if (objPos1.x > mousePosition.x || objPos1.y > mousePosition.y ||
-					objPos2.x < mousePosition.x || objPos2.y < mousePosition.y)
-				{
-					continue;
-				}
-				m_selectedObject = obj;
-				break;
-			}
+			m_selectedObject = HitTest(mousePosition);
+			Refresh();
 		}
 		//NONE, 선택상태에서는 push_back를 해서는 안된다. 고로 하기 전에 return한다.
 		return;
 	}
 	m_drawingObjects.push_back(m_selectedObject);
+	Refresh();
 }
 
 void DrawingCanvas::OnLButtonUp(wxMouseEvent & event)
@@ -195,7 +187,7 @@ void DrawingCanvas::OnLButtonUp(wxMouseEvent & event)
 		
 		Refresh();
 	}
-	m_trackerSelect = Tracker::None;
+	m_trackerDirection = Tracker::Direction::None;
 }
 
 void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
@@ -204,11 +196,11 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 	{
 		if (m_selectedObject != nullptr)
 		{
-			auto s = event.GetPosition() - m_selectedObject->GetPosition();
+			//auto s = event.GetPosition() - m_selectedObject->GetPosition();
 			if (m_drawType != DrawingObjectType::NONE)
 			{
 				//객체를 그릴 떄는 크기를 지정한다.
-				m_selectedObject->SetSize(wxSize(s.x, s.y));
+				m_selectedObject->SetPoint2(event.GetPosition());
 			}
 			else
 			{
@@ -218,72 +210,59 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 				wxPoint pos = m_selectedObject->GetPosition();
 				wxSize size = m_selectedObject->GetSize();
 				wxPoint mousePosition = event.GetPosition();
-				switch (m_trackerSelect)
+				switch (m_trackerDirection)
 				{
-				case Tracker::NorthWest:
-					pos += delta;
-					delta.x *= -1;
-					delta.y *= -1;
-				case Tracker::SouthEast:
-					size.x += delta.x;
-					size.y += delta.y;
+				case Tracker::Direction::Pt1:
+					m_selectedObject->SetPoint1(m_selectedObject->GetPoint1() + delta);
 					break;
-				case Tracker::North:
-					pos.y += delta.y;
-					delta.y *= -1;
-				case Tracker::South:
-					size.y += delta.y;
+				case Tracker::Direction::Pt2:
+					m_selectedObject->SetPoint2(m_selectedObject->GetPoint2() + delta);
 					break;
-				case Tracker::West:
-					pos.x += delta.x;
-					delta.x *= -1;
-				case Tracker::East:
-					size.x += delta.x;
-					break;
-				case Tracker::NorthEast:
-					pos.y += delta.y;
-					size.x += delta.x;
-					size.y -= delta.y;
-					break;
-				case Tracker::SouthWest:
-					pos.x  += delta.x;
-					size.y += delta.y;
-					size.x -= delta.x;
+				case Tracker::Direction::None:
+					m_selectedObject->Move(delta);
 					break;
 				default:
-					pos += delta;
+					m_selectedObject->Stratch(m_trackerDirection, delta);
 					break;
 				}
-				m_selectedObject->SetPosition(pos);
-				m_selectedObject->SetSize(size);
+					
 			}
-			Refresh();
 		}
+			Refresh();
 	}
-	else if (m_selectedObject != nullptr && m_drawType == DrawingObjectType::NONE)
+	if (m_selectedObject != nullptr && m_drawType == DrawingObjectType::NONE)
 	{
-		switch (CheckTrackerSelect(m_selectedObject, event.GetPosition()))
+		this->SetCursor(*wxSTANDARD_CURSOR);
+		for (auto & tracker : m_selectedObject->GetTrackers())
 		{
-		case Tracker::NorthWest:
-		case Tracker::SouthEast:
-			this->SetCursor(wxStockCursor::wxCURSOR_SIZENWSE);
-			break;
-		case Tracker::North:
-		case Tracker::South:
-			this->SetCursor(wxStockCursor::wxCURSOR_SIZENS);
-			break;
-		case Tracker::West:
-		case Tracker::East:
-			this->SetCursor(wxStockCursor::wxCURSOR_SIZEWE);
-			break;
-		case Tracker::NorthEast:
-		case Tracker::SouthWest:
-			this->SetCursor(wxStockCursor::wxCURSOR_SIZENESW);
-			break;
-		default:
-			this->SetCursor(*wxSTANDARD_CURSOR);
+			if (tracker.IsHit(event.GetPosition()))
+			{
+				switch (tracker.GetDirection())
+				{
+				case Tracker::Direction::NorthWest:
+				case Tracker::Direction::SouthEast:
+					this->SetCursor(wxStockCursor::wxCURSOR_SIZENWSE);
+					break;
+				case Tracker::Direction::North:
+				case Tracker::Direction::South:
+					this->SetCursor(wxStockCursor::wxCURSOR_SIZENS);
+					break;
+				case Tracker::Direction::West:
+				case Tracker::Direction::East:
+					this->SetCursor(wxStockCursor::wxCURSOR_SIZEWE);
+					break;
+				case Tracker::Direction::NorthEast:
+				case Tracker::Direction::SouthWest:
+					this->SetCursor(wxStockCursor::wxCURSOR_SIZENESW);
+					break;
+				default:
+					this->SetCursor(wxStockCursor::wxCURSOR_SIZING);
+				}
+				break;
+			}
 		}
 	}
 }
+
 
 

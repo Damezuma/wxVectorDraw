@@ -1,5 +1,6 @@
 #pragma once
 #include<wx/wx.h>
+#include "tracker.h"
 enum DrawingObjectType : unsigned long
 {
 	NONE,
@@ -7,31 +8,64 @@ enum DrawingObjectType : unsigned long
 	ELLIPSE,
 	LINE
 };
+
 class DrawingObject
 {
 public:
-	DrawingObject(const wxPoint & position) :m_position(position), m_size(0,0){}
-	~DrawingObject(){}
+	DrawingObject(const wxPoint & position) :m_point1(position), m_point2(position){}
+	virtual  ~DrawingObject() { }
 	void SetPosition(const wxPoint& pos)
 	{
-		m_position = pos;
+		wxPoint virtualPosition = GetPosition();
+		wxPoint delta = pos - virtualPosition;
+		m_point1 += delta;
+		m_point2 += delta;
+		OnUpdatePosition();
 	}
-	virtual void SetSize(const wxSize& size)
+	void Move(const wxPoint & delta)
 	{
-		m_size = size;
+		m_point1 += delta;
+		m_point2 += delta;
+		OnUpdatePosition();
 	}
+	void Stratch(Tracker::Direction direction, const wxPoint & delta);
 	virtual wxSize GetSize() const
 	{
-		return m_size;
+		wxPoint s = m_point1 - m_point2;
+		return wxSize(abs(s.x),abs(s.y));
 	}
 	wxPoint GetPosition() const
 	{
-		return m_position;
+		wxPoint virtualPosition;
+		virtualPosition.x = (m_point1.x < m_point2.x) ? m_point1.x : m_point2.x;
+		virtualPosition.y = (m_point1.y < m_point2.y) ? m_point1.y : m_point2.y;
+		return virtualPosition;
 	}
+	void SetPoint1(const wxPoint & pt)
+	{
+		m_point1 = pt;
+		OnUpdatePosition(); 
+	}
+	void SetPoint2(const wxPoint & pt)
+	{
+		m_point2 = pt;
+		OnUpdatePosition();
+	}
+	wxPoint GetPoint1() const
+	{
+		return m_point1;
+	}
+	wxPoint GetPoint2() const
+	{
+		return m_point2;
+	}
+	virtual bool IsHit(const wxPoint & pos);
 	virtual void DoDraw(wxDC & dc) const = 0;
+	virtual const std::vector<Tracker>& GetTrackers() = 0;
 protected:
-	wxSize m_size;
-	wxPoint m_position; 
+	virtual void OnUpdatePosition() = 0;
+	wxPoint m_point1;
+	wxPoint m_point2;
 };
 class Line
 {
@@ -69,10 +103,8 @@ protected:
 class RectangleObject : public DrawingObject
 {
 public:
-	RectangleObject(const wxPoint & position, const Line & line, const Shape & shape) : DrawingObject(position),m_line(line),m_shape(shape)
-	{
-
-	}
+	RectangleObject(const wxPoint & position, const Line & line, const Shape & shape);
+	~RectangleObject() { m_trackers.clear(); }
 	void SetLine(const Line & line)
 	{
 		m_line = line;
@@ -89,18 +121,19 @@ public:
 	{
 		return m_shape;
 	}
+	const std::vector<Tracker>& GetTrackers() override;
 	virtual void DoDraw(wxDC & dc) const override;
 protected:
+	virtual void OnUpdatePosition() override;
+	std::vector<Tracker> m_trackers;
 	Line m_line;
 	Shape m_shape;
 };
 class EllipseObject : public DrawingObject
 {
 public:
-	EllipseObject(const wxPoint & position, const Line & line, const Shape & shape) : DrawingObject(position), m_line(line), m_shape(shape)
-	{
-
-	}
+	EllipseObject(const wxPoint & position, const Line & line, const Shape & shape);
+	~EllipseObject() { m_trackers.clear(); }
 	void SetLine(const Line & line)
 	{
 		m_line = line;
@@ -117,18 +150,19 @@ public:
 	{
 		return m_shape;
 	}
+	const std::vector<Tracker>& GetTrackers() override;
 	virtual void DoDraw(wxDC & dc) const override;
 protected:
+	virtual void OnUpdatePosition() override;
+	std::vector<Tracker> m_trackers;
 	Line m_line;
 	Shape m_shape;
 };
 class LineObject : public DrawingObject
 {
 public:
-	LineObject(const wxPoint & position, const Line & line) : DrawingObject(position), m_line(line)
-	{
-
-	}
+	LineObject(const wxPoint & position, const Line & line);
+	~LineObject() { m_trackers.clear(); }
 	void SetLine(const Line & line)
 	{
 		m_line = line;
@@ -137,7 +171,10 @@ public:
 	{
 		return m_line;
 	}
+	const std::vector<Tracker>& GetTrackers() override;
 	virtual void DoDraw(wxDC & dc) const override;
 protected:
+	virtual void OnUpdatePosition() override;
+	std::vector<Tracker> m_trackers;
 	Line m_line;
 };
