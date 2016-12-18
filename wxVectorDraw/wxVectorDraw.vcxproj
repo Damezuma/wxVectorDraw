@@ -151,12 +151,14 @@
     <ClCompile Include="drawingpanel.cpp" />
     <ClCompile Include="mainapp.cpp" />
     <ClCompile Include="mainframe.cpp" />
+    <ClCompile Include="propertydialog.cpp" />
     <ClCompile Include="tracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drawingobject.h" />
     <ClInclude Include="drawingpanel.h" />
     <ClInclude Include="mainframe.h" />
+    <ClInclude Include="propertydialog.h" />
     <ClInclude Include="tracker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

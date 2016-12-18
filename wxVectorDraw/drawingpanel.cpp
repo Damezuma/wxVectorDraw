@@ -1,4 +1,5 @@
 ﻿#include "drawingpanel.h"
+#include "propertydialog.h"
 wxDEFINE_EVENT(wxEVT_FINISH_DRAW_OBJECT, wxCommandEvent);
 IMPLEMENT_DYNAMIC_CLASS(DrawingCanvas, wxWindow)
 wxBEGIN_EVENT_TABLE(DrawingCanvas, wxWindow)
@@ -291,7 +292,6 @@ void DrawingCanvas::OnRButtonDown(wxMouseEvent & event)
 	{
 		Refresh();
 	}
-	
 }
 
 void DrawingCanvas::OnClickDelete(wxCommandEvent & e)
@@ -315,7 +315,41 @@ void DrawingCanvas::OnClickDelete(wxCommandEvent & e)
 }
 void DrawingCanvas::OnClickProperty(wxCommandEvent & e)
 {
+	auto * dialog =new PropertyDialog(this, m_selectedObject);
+	if (dialog->ShowModal() == wxID_OK)
+	{
+		Line line = dialog->GetLine();
+		Shape shape = dialog->GetShpae();
+		/*object를 캐스팅을 시도한다*/
 
+		RectangleObject * ractangleObject = dynamic_cast<RectangleObject*>(m_selectedObject);
+		if (ractangleObject != nullptr)
+		{
+			ractangleObject->SetLine(line);
+			ractangleObject->SetShape(shape);
+			Refresh();
+			delete dialog;
+			return;
+		}
+		EllipseObject * ellipseObject = dynamic_cast<EllipseObject*>(m_selectedObject);
+		if (ellipseObject != nullptr)
+		{
+			ellipseObject->SetLine(line);
+			ellipseObject->SetShape(shape);
+			Refresh();
+			delete dialog;
+			return;
+		}
+		LineObject * lineObject = dynamic_cast<LineObject*>(m_selectedObject);
+		if (lineObject != nullptr)
+		{
+			lineObject->SetLine(line);
+			Refresh();
+			delete dialog;
+			return;
+		}
+	}
+	delete dialog;
 }
 
 void DrawingCanvas::OnClickMoveUpZindex(wxCommandEvent & e)
