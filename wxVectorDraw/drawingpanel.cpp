@@ -1,5 +1,6 @@
 ﻿#include "drawingpanel.h"
 #include "propertydialog.h"
+#include <wx/dcbuffer.h>
 wxDEFINE_EVENT(wxEVT_FINISH_DRAW_OBJECT, wxCommandEvent);
 IMPLEMENT_DYNAMIC_CLASS(DrawingCanvas, wxWindow)
 wxBEGIN_EVENT_TABLE(DrawingCanvas, wxWindow)
@@ -64,7 +65,8 @@ void DrawingCanvas::SetDrawToolSelect()
 }
 void DrawingCanvas::OnPaint(wxPaintEvent & event)
 {
-	wxPaintDC dc(this);
+	wxBufferedPaintDC dc(this);
+	dc.Clear();
 	for (DrawingObject * it : m_drawingObjects)
 	{
 		it->DoDraw(dc);
@@ -166,19 +168,19 @@ void DrawingCanvas::OnLButtonDown(wxMouseEvent & event)
 				m_selectedObject = HitTest(mousePosition);
 			}
 			
-			Refresh();
+			Refresh(false);
 		}
 		//객체를 선택하는 과정
 		if (m_selectedObject == nullptr)
 		{
 			m_selectedObject = HitTest(mousePosition);
-			Refresh();
+			Refresh(false);
 		}
 		//NONE, 선택상태에서는 push_back를 해서는 안된다. 고로 하기 전에 return한다.
 		return;
 	}
 	m_drawingObjects.push_back(m_selectedObject);
-	Refresh();
+	Refresh(false);
 }
 
 void DrawingCanvas::OnLButtonUp(wxMouseEvent & event)
@@ -191,7 +193,7 @@ void DrawingCanvas::OnLButtonUp(wxMouseEvent & event)
 			m_selectedObject = nullptr;
 		}
 		
-		Refresh();
+		Refresh(false);
 	}
 	m_trackerDirection = Tracker::Direction::None;
 }
@@ -234,7 +236,7 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 					
 			}
 		}
-			Refresh();
+		Refresh(false);
 	}
 	if (m_selectedObject != nullptr && m_drawType == DrawingObjectType::NONE)
 	{
@@ -285,12 +287,12 @@ void DrawingCanvas::OnRButtonDown(wxMouseEvent & event)
 		menu.AppendSeparator();
 		menu.Append(6003, wxT("위로"));
 		menu.Append(6004, wxT("아래로"));
-		Refresh();
+		Refresh(false);
 		this->PopupMenu(&menu, event.GetPosition());
 	}
 	else
 	{
-		Refresh();
+		Refresh(false);
 	}
 }
 
@@ -307,7 +309,7 @@ void DrawingCanvas::OnClickDelete(wxCommandEvent & e)
 			m_drawingObjects.erase(it);
 			delete m_selectedObject;
 			m_selectedObject = nullptr;
-			Refresh();
+			Refresh(false);
 			return;
 		}
 	}
@@ -327,7 +329,7 @@ void DrawingCanvas::OnClickProperty(wxCommandEvent & e)
 		{
 			ractangleObject->SetLine(line);
 			ractangleObject->SetShape(shape);
-			Refresh();
+			Refresh(false);
 			delete dialog;
 			return;
 		}
@@ -336,7 +338,7 @@ void DrawingCanvas::OnClickProperty(wxCommandEvent & e)
 		{
 			ellipseObject->SetLine(line);
 			ellipseObject->SetShape(shape);
-			Refresh();
+			Refresh(false);
 			delete dialog;
 			return;
 		}
@@ -344,7 +346,7 @@ void DrawingCanvas::OnClickProperty(wxCommandEvent & e)
 		if (lineObject != nullptr)
 		{
 			lineObject->SetLine(line);
-			Refresh();
+			Refresh(false);
 			delete dialog;
 			return;
 		}
@@ -365,7 +367,7 @@ void DrawingCanvas::OnClickMoveUpZindex(wxCommandEvent & e)
 			*it = *(it + 1);
 			++it;
 			*it = m_selectedObject;
-			Refresh();
+			Refresh(false);
 			return;
 		}
 	}
@@ -384,7 +386,7 @@ void DrawingCanvas::OnClickMoveDownZindex(wxCommandEvent & e)
 			*it = *(it - 1);
 			--it;
 			*it = m_selectedObject;
-			Refresh();
+			Refresh(false);
 			return;
 		}
 	}
