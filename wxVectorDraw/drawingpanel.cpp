@@ -67,6 +67,7 @@ void DrawingCanvas::OnPaint(wxPaintEvent & event)
 {
 	wxBufferedPaintDC dc(this);
 	dc.Clear();
+	m_canvasGrid.Draw(dc);
 	for (DrawingObject * it : m_drawingObjects)
 	{
 		it->DoDraw(dc);
@@ -114,6 +115,7 @@ DrawingObject * DrawingCanvas::HitTest(const wxPoint & pos)
 void DrawingCanvas::OnLButtonDown(wxMouseEvent & event)
 {
 	wxPoint mousePosition = event.GetPosition();
+	mousePosition = m_canvasGrid.GetGridFitPoint(mousePosition);
 	m_preMousePosition = mousePosition;
 	switch (m_drawType)
 	{
@@ -207,24 +209,27 @@ void DrawingCanvas::OnMouseMove(wxMouseEvent & event)
 			//auto s = event.GetPosition() - m_selectedObject->GetPosition();
 			if (m_drawType != DrawingObjectType::NONE)
 			{
-				//객체를 그릴 떄는 크기를 지정한다.
-				m_selectedObject->SetPoint2(event.GetPosition());
+				auto pos = m_canvasGrid.GetGridFitPoint(event.GetPosition());
+				m_selectedObject->SetPoint2(pos);
 			}
 			else
 			{
 				//트래커를 누른 것이 아닐 때는 이동을 한다. 
-				wxPoint delta = event.GetPosition() - m_preMousePosition;
-				m_preMousePosition = event.GetPosition();
+				wxPoint mousePosition = event.GetPosition();
+				mousePosition = m_canvasGrid.GetGridFitPoint(mousePosition);
+				wxPoint delta = mousePosition - m_preMousePosition;
+				m_preMousePosition = mousePosition;
 				wxPoint pos = m_selectedObject->GetPosition();
 				wxSize size = m_selectedObject->GetSize();
-				wxPoint mousePosition = event.GetPosition();
+				
 				switch (m_trackerDirection)
 				{
-				case Tracker::Direction::Pt1:
-					m_selectedObject->SetPoint1(m_selectedObject->GetPoint1() + delta);
+				case Tracker::Direction::Pt1: 
+				
+					m_selectedObject->SetPoint1(mousePosition);
 					break;
 				case Tracker::Direction::Pt2:
-					m_selectedObject->SetPoint2(m_selectedObject->GetPoint2() + delta);
+					m_selectedObject->SetPoint2(mousePosition);
 					break;
 				case Tracker::Direction::None:
 					m_selectedObject->Move(delta);

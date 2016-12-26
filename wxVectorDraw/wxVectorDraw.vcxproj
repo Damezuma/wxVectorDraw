@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="drawingobject.cpp" />
     <ClCompile Include="drawingpanel.cpp" />
+    <ClCompile Include="grid.cpp" />
     <ClCompile Include="mainapp.cpp" />
     <ClCompile Include="mainframe.cpp" />
     <ClCompile Include="propertydialog.cpp" />
@@ -157,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="drawingobject.h" />
     <ClInclude Include="drawingpanel.h" />
+    <ClInclude Include="grid.h" />
     <ClInclude Include="mainframe.h" />
     <ClInclude Include="propertydialog.h" />
     <ClInclude Include="tracker.h" />

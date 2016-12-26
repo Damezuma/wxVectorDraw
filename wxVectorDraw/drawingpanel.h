@@ -3,7 +3,7 @@
 #include <vector>
 #include "drawingobject.h"
 #include "tracker.h"
-
+#include "grid.h"
 wxDECLARE_EVENT(wxEVT_FINISH_DRAW_OBJECT, wxCommandEvent);
 
 class DrawingCanvas :public wxWindow
@@ -34,6 +34,7 @@ protected:
 	DrawingObjectType m_drawType;
 	wxPoint m_preMousePosition;
 	Tracker::Direction m_trackerDirection;
+	CanvasGridManager m_canvasGrid;
 private:
 	void Init();
 	DECLARE_DYNAMIC_CLASS(DrawingCanvas)
